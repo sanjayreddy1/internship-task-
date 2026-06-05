@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo App</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --sidebar-width: 260px;
+      --theme-color: #6366f1;
+    }
+    body { background: #0f0f1a; color: #000; font-weight: 700; font-family: 'Inter', -apple-system, sans-serif; }
+    .sidebar {
+      width: var(--sidebar-width); height: 100vh; position: fixed; top: 0; left: 0;
+      background: #1a1a2e; border-right: 1px solid #2a2a4a; overflow-y: auto; z-index: 100;
+    }
+    .sidebar, .sidebar * { color: #e0e0e0; }
+    .sidebar .nav-link { color: #a0a0c0; padding: 0.65rem 1rem; border-radius: 0.5rem; margin: 2px 8px; transition: all 0.2s; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { background: #2a2a4a; color: #fff; }
+    .sidebar .nav-link i { margin-right: 10px; width: 20px; text-align: center; }
+    .main-content { margin-left: var(--sidebar-width); min-height: 100vh; padding: 1.5rem; }
+    .card { background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 12px; color: #e0e0e0; }
+    .card .text-muted { color: #a0a0c0 !important; }
+    .card-header { background: transparent; border-bottom: 1px solid #2a2a4a; padding: 1rem 1.25rem; font-weight: 600; }
+    .todo-item { padding: 0.75rem 1rem; border-bottom: 1px solid #2a2a4a; transition: background 0.2s; cursor: pointer; }
+    .todo-item:hover { background: #22223a; }
+    .todo-item:last-child { border-bottom: none; }
+    .todo-item.completed .todo-title { text-decoration: line-through; opacity: 0.6; }
+    .priority-badge { font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+    .priority-high { background: #ef444433; color: #ef4444; }
+    .priority-medium { background: #f59e0b33; color: #f59e0b; }
+    .priority-low { background: #22c55e33; color: #22c55e; }
+    .stat-card { text-align: center; padding: 1.25rem; }
+    .stat-card .stat-value { font-size: 2rem; font-weight: 700; }
+    .stat-card .stat-label { font-size: 0.8rem; color: #a0a0c0; text-transform: uppercase; letter-spacing: 0.5px; }
+    .auth-container .card { padding: 2rem; }
+    .btn-primary { background: var(--theme-color, #6366f1); border-color: var(--theme-color, #6366f1); }
+    .btn-primary:hover { filter: brightness(0.9); }
+    .form-control, .form-select { background: #fff; border-color: #ccc; color: #000; }
+    .form-control:focus, .form-select:focus { background: #fff; border-color: var(--theme-color, #6366f1); color: #000; box-shadow: 0 0 0 2px var(--theme-color, #6366f1); }
+    .form-control::placeholder { color: #999; }
+    input[type="date"]::-webkit-calendar-picker-indicator { filter: brightness(0); cursor: pointer; }
+    .list-group-item { background: #1a1a2e; border-color: #2a2a4a; color: #e0e0e0; }
+    .modal-content { background: #1a1a2e; border: 1px solid #2a2a4a; color: #e0e0e0; }
+    .modal-content .text-muted { color: #a0a0c0 !important; }
+    .modal-header { border-bottom: 1px solid #2a2a4a; }
+    .modal-footer { border-top: 1px solid #2a2a4a; }
+    .btn-close { filter: invert(1); }
+    .toast-container { z-index: 9999; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 3px; }
+    .empty-state { text-align: center; padding: 3rem 1rem; color: #a0a0c0; }
+    .empty-state i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+    .vue-transition { transition: all 0.2s; }
+    .badge-count { background: var(--theme-color, #6366f1); color: #fff; font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; margin-left: auto; }
+    .section-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--theme-color, #6366f1); padding: 1rem 1rem 0.5rem; font-weight: 700; }
+    .app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+    .app-header h4 { margin: 0; }
+    .tab-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .tab-btn { padding: 0.5rem 1.25rem; border-radius: 8px; border: 1px solid #2a2a4a; background: #1a1a2e; color: #e0e0e0; cursor: pointer; font-size: 0.875rem; transition: all 0.2s; }
+    .tab-btn:hover { background: #2a2a4a; color: #fff; }
+    .tab-btn.active { background: var(--theme-color, #6366f1); border-color: var(--theme-color, #6366f1); color: #fff; }
+    .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--theme-color, #6366f1); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; }
+    .todo-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--theme-color, #6366f1); display: inline-flex; align-items: center; justify-content: center; margin-right: 12px; cursor: pointer; flex-shrink: 0; transition: all 0.2s; }
+    .todo-check:hover { background: rgba(99,102,241,0.2); }
+    .todo-check.checked { background: var(--theme-color, #6366f1); }
+    .todo-check.checked i { font-size: 12px; color: #fff; }
+    .password-strength-bar { height: 4px; border-radius: 2px; margin-top: 6px; transition: width 0.3s, background 0.3s; }
+    .password-checklist { list-style: none; padding: 0; margin: 8px 0 0; font-size: 0.8rem; }
+    .password-checklist li { margin: 3px 0; color: #a0a0c0; transition: all 0.3s; }
+    .password-checklist li.valid { color: #22c55e; }
+    .password-checklist li i { margin-right: 6px; }
+    .input-group .btn-outline-secondary { border-color: #2a2a4a; color: #a0a0c0; }
+    .input-group .btn-outline-secondary:hover { background: #2a2a4a; color: #fff; }
+    .live-clock { font-size: 0.85rem; color: #000; font-weight: 700; font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 4px; }
+    .calendar-widget { background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 12px; padding: 1rem; color: #e0e0e0; }
+    .calendar-widget .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+    .calendar-widget .cal-header span { font-weight: 600; font-size: 0.9rem; }
+    .calendar-widget .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+    .calendar-widget .cal-grid .day-name { font-size: 0.65rem; color: var(--theme-color, #6366f1); font-weight: 600; padding: 4px 0; }
+    .calendar-widget .cal-grid .day { font-size: 0.8rem; padding: 4px; border-radius: 6px; cursor: default; transition: background 0.2s; }
+    .calendar-widget .cal-grid .day:hover { background: #2a2a4a; }
+    .calendar-widget .cal-grid .day.today { background: #3b82f6; color: #fff; font-weight: 600; border-radius: 6px; }
+    .calendar-widget .cal-grid .day.other-month { opacity: 0.3; }
+    .calendar-widget .cal-grid .day.has-upcoming { color: #ef4444; font-weight: 700; }
+    .calendar-widget .cal-grid .day.today.has-upcoming { color: #fff; }
+    .cal-nav-btn { background: none; border: none; color: #a0a0c0; cursor: pointer; padding: 2px 8px; border-radius: 4px; }
+    .cal-nav-btn:hover { background: #2a2a4a; color: #fff; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes bounceIn { 0% { opacity: 0; transform: scale(0.8); } 50% { transform: scale(1.05); } 100% { opacity: 1; transform: scale(1); } }
+    @keyframes shimmer { 0% { background-position: -200px 0; } 100% { background-position: 200px 0; } }
+    .fade-in-up { animation: fadeInUp 0.5s ease-out; }
+    .fade-in { animation: fadeIn 0.4s ease-out; }
+    .slide-in { animation: slideIn 0.3s ease-out; }
+    .bounce-in { animation: bounceIn 0.5s ease-out; }
+    .auth-container { max-width: 420px; margin: 80px auto; animation: fadeInUp 0.5s ease-out; }
+    .stat-card { transition: transform 0.3s, box-shadow 0.3s; cursor: default; }
+    .stat-card:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 8px 25px rgba(99,102,241,0.15); }
+    .todo-item { transition: all 0.3s; }
+    .todo-item:hover { transform: translateX(4px); }
+    .sidebar .nav-link { transition: all 0.3s; }
+    .sidebar .nav-link:hover { transform: translateX(4px); }
+    .tab-btn { transition: all 0.3s; }
+    .tab-btn:hover { transform: translateY(-1px); }
+    .btn-primary { transition: all 0.3s; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
+    .priority-badge { transition: all 0.2s; }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+      .sidebar.show { transform: translateX(0); }
+      .main-content { margin-left: 0; }
+      .mobile-toggle { display: block !important; }
+    }
+    .mobile-toggle { display: none; }
+    .chatbot-toggle {
+      position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 50%;
+      background: #6366f1; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(99,102,241,0.4); z-index: 1000;
+      transition: all 0.3s; display: flex; align-items: center; justify-content: center;
+    }
+    .chatbot-toggle:hover { transform: scale(1.1); box-shadow: 0 6px 25px rgba(99,102,241,0.6); }
+    .chatbot-toggle .badge-dot { position: absolute; top: 0; right: 0; width: 12px; height: 12px; border-radius: 50%; background: #22c55e; border: 2px solid #1a1a2e; }
+    .chatbot-panel {
+      position: fixed; bottom: 92px; right: 24px; width: 380px; height: 520px;
+      background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 16px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.4); z-index: 999;
+      display: flex; flex-direction: column; overflow: hidden;
+      animation: fadeInUp 0.3s ease-out;
+    }
+    .chatbot-panel .chat-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 1.25rem; border-bottom: 1px solid #2a2a4a;
+    }
+    .chatbot-panel .chat-header h6 { margin: 0; font-weight: 600; }
+    .chatbot-panel .chat-header .close-btn { background: none; border: none; color: #a0a0c0; cursor: pointer; font-size: 1.2rem; padding: 0; }
+    .chatbot-panel .chat-header .close-btn:hover { color: #fff; }
+    .chatbot-panel .chat-messages { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 8px; }
+    .chatbot-panel .chat-messages .msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 0.875rem; line-height: 1.4; animation: fadeIn 0.3s ease-out; }
+    .chatbot-panel .chat-messages .msg.user { background: #6366f1; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .chatbot-panel .chat-messages .msg.bot { background: #2a2a4a; color: #e0e0e0; align-self: flex-start; border-bottom-left-radius: 4px; }
+    .chatbot-panel .chat-messages .msg.bot .sources { font-size: 0.7rem; color: #6366f1; margin-top: 4px; }
+    .chatbot-panel .chat-input-area { display: flex; gap: 8px; padding: 0.75rem 1rem; border-top: 1px solid #2a2a4a; }
+    .chatbot-panel .chat-input-area input { flex: 1; background: #22223a; border: 1px solid #2a2a4a; border-radius: 8px; padding: 0.5rem 0.75rem; color: #e0e0e0; outline: none; }
+    .chatbot-panel .chat-input-area input:focus { border-color: #6366f1; }
+    .chatbot-panel .chat-input-area button { background: #6366f1; border: none; border-radius: 8px; color: #fff; padding: 0.5rem 0.75rem; cursor: pointer; transition: background 0.2s; }
+    .chatbot-panel .chat-input-area button:hover { background: #5558e6; }
+    .chatbot-panel .chat-input-area button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .typing-indicator { display: flex; gap: 4px; padding: 10px 14px; background: #2a2a4a; border-radius: 12px; align-self: flex-start; border-bottom-left-radius: 4px; }
+    .typing-indicator span { width: 8px; height: 8px; border-radius: 50%; background: #6366f1; animation: typingBounce 1.4s infinite; }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+    @media (max-width: 576px) {
+      .chatbot-panel { width: calc(100% - 32px); right: 16px; bottom: 84px; height: 60vh; }
+    }
+    .profile-modal .modal-dialog { max-width: 500px; }
+    .profile-modal .modal-content { border-radius: 16px; }
+    .profile-header-card { text-align: center; padding: 1.5rem 1rem; border-bottom: 1px solid #2a2a4a; }
+    .profile-header-card .big-avatar { width: 64px; height: 64px; border-radius: 50%; background: #6366f1; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; margin: 0 auto 12px; }
+    .profile-header-card h5 { margin: 0; font-weight: 600; }
+    .profile-header-card .text-muted { font-size: 0.85rem; }
+    .profile-section { padding: 1rem 1.25rem; border-bottom: 1px solid #2a2a4a; }
+    .profile-section:last-child { border-bottom: none; }
+    .profile-section .section-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #6366f1; font-weight: 700; margin-bottom: 12px; padding: 0; }
+    .profile-section .info-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.875rem; }
+    .profile-section .info-row .label { color: #a0a0c0; }
+    .profile-section .info-row .value { color: #e0e0e0; font-weight: 500; }
+    .theme-swatches, .color-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+    .theme-swatch, .color-swatch { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all 0.3s; }
+    .theme-swatch:hover, .color-swatch:hover { transform: scale(1.15); }
+    .theme-swatch.active, .color-swatch.active { border-color: #fff; box-shadow: 0 0 0 2px #6366f1; transform: scale(1.1); }
+    .theme-label { font-size: 0.7rem; text-align: center; margin-top: 4px; color: #a0a0c0; }
+    .theme-item { display: flex; flex-direction: column; align-items: center; }
+    .color-item { display: flex; flex-direction: column; align-items: center; }
+    .color-label { font-size: 0.7rem; text-align: center; margin-top: 4px; color: #a0a0c0; }
+    .cpw-form .form-control { margin-bottom: 8px; }
+    .cpw-form .input-group { margin-bottom: 8px; }
+    .logout-btn { width: 100%; padding: 0.6rem; border-radius: 10px; font-weight: 600; transition: all 0.3s; }
+    .logout-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
+    .profile-nav { display: flex; border-bottom: 1px solid #2a2a4a; }
+    .profile-nav .nav-item { flex: 1; text-align: center; padding: 10px 8px; cursor: pointer; font-size: 0.8rem; color: #a0a0c0; border-bottom: 2px solid transparent; transition: all 0.3s; }
+    .profile-nav .nav-item:hover { color: #e0e0e0; background: #22223a; }
+    .profile-nav .nav-item.active { color: var(--theme-color, #6366f1); border-bottom-color: var(--theme-color, #6366f1); }
+    .profile-nav .nav-item i { display: block; font-size: 1.2rem; margin-bottom: 2px; }
+    .profile-page { padding: 1rem 1.25rem; min-height: 280px; }
+    .profile-page h6 { font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem; color: #a0a0c0; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- Auth Pages -->
+  <div v-if="!isLoggedIn" class="auth-container">
+    <div class="text-center mb-4">
+      <i class="bi bi-check2-square" style="font-size: 2.5rem; color: #6366f1;"></i>
+      <h4 class="mt-2">Todo App</h4>
+      <p class="text-muted">Organize your life, one task at a time</p>
+    </div>
+    <div class="card">
+      <!-- Login Form -->
+      <div v-if="authMode === 'login'">
+        <h5 class="mb-3">Welcome back</h5>
+          <form @submit.prevent="login">
+            <div class="mb-3">
+              <label class="form-label">Email or Username</label>
+              <input type="text" class="form-control" v-model="authForm.email" required placeholder="you@example.com">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <div class="input-group">
+                <input :type="showLoginPassword ? 'text' : 'password'" class="form-control" v-model="authForm.password" required placeholder="••••••••">
+                <button class="btn btn-outline-secondary" type="button" @click="showLoginPassword = !showLoginPassword" tabindex="-1">
+                  <i :class="showLoginPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                </button>
+              </div>
+            </div>
+          <button type="submit" class="btn btn-primary w-100" :disabled="loading">
+            <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
+            Sign In
+          </button>
+        </form>
+        <div class="text-center mt-3">
+          <small class="text-muted">Don't have an account? <a href="#" @click.prevent="switchAuth('register')" style="color: #6366f1;">Sign up</a></small>
+        </div>
+      </div>
+      <!-- Register Form -->
+      <div v-else>
+        <h5 class="mb-3">Create account</h5>
+        <form @submit.prevent="register">
+            <div class="mb-3">
+              <label class="form-label">Username</label>
+              <input type="text" class="form-control" v-model="authForm.username" required minlength="3">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" v-model="authForm.email" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <div class="input-group">
+                <input :type="showRegisterPassword ? 'text' : 'password'" class="form-control" v-model="authForm.password" required minlength="8" @input="checkPassword">
+                <button class="btn btn-outline-secondary" type="button" @click="showRegisterPassword = !showRegisterPassword" tabindex="-1">
+                  <i :class="showRegisterPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                </button>
+              </div>
+              <div class="password-strength-bar" :style="{ width: strengthPercent + '%', background: strengthColor }"></div>
+              <ul class="password-checklist">
+                <li :class="{ valid: pChecks.minLen }"><i :class="pChecks.minLen ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i> 8+ characters</li>
+                <li :class="{ valid: pChecks.hasUpper }"><i :class="pChecks.hasUpper ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i> Uppercase letter</li>
+                <li :class="{ valid: pChecks.hasLower }"><i :class="pChecks.hasLower ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i> Lowercase letter</li>
+                <li :class="{ valid: pChecks.hasNumber }"><i :class="pChecks.hasNumber ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i> Number</li>
+                <li :class="{ valid: pChecks.hasSpecial }"><i :class="pChecks.hasSpecial ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i> Special character</li>
+              </ul>
+            </div>
+          <button type="submit" class="btn btn-primary w-100" :disabled="loading">
+            <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
+            Create Account
+          </button>
+        </form>
+        <div class="text-center mt-3">
+          <small class="text-muted">Already have an account? <a href="#" @click.prevent="switchAuth('login')" style="color: #6366f1;">Sign in</a></small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div v-else>
+    <!-- Sidebar -->
+    <div class="sidebar" :class="{ show: sidebarOpen }">
+      <div class="d-flex align-items-center p-3 border-bottom border-secondary" style="border-color: #2a2a4a !important;">
+        <i class="bi bi-check2-square" style="color: #6366f1; font-size: 1.5rem;"></i>
+        <span class="ms-2 fw-bold">Todo App</span>
+      </div>
+      <div class="section-title">Menu</div>
+      <ul class="nav flex-column">
+        <li class="nav-item"><a class="nav-link" :class="{ active: view === 'dashboard' }" href="#" @click="view='dashboard'; sidebarOpen=false"><i class="bi bi-grid-1x2-fill"></i>Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" :class="{ active: view === 'todos' }" href="#" @click="view='todos'; filterStatus='active'; sidebarOpen=false"><i class="bi bi-list-task"></i>Tasks</a></li>
+      </ul>
+      <div class="section-title">Lists</div>
+      <ul class="nav flex-column">
+        <li v-for="list in lists" :key="list.id" class="nav-item">
+          <a class="nav-link" href="#" @click="selectList(list); sidebarOpen=false">
+            <i class="bi bi-circle-fill" :style="{ color: list.color, fontSize: '10px' }"></i>
+            <span>{{ list.name }}</span>
+            <span class="badge-count">{{ list.todo_count || 0 }}</span>
+          </a>
+        </li>
+      </ul>
+      <div class="section-title">Account</div>
+      <ul class="nav flex-column">
+        <li class="nav-item"><a class="nav-link" href="#" @click="logout"><i class="bi bi-box-arrow-right"></i>Logout</a></li>
+      </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Top Bar with Live Clock & Profile -->
+      <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-secondary" style="border-color: #2a2a4a !important;">
+        <div class="d-flex align-items-center gap-3">
+          <button class="btn btn-outline-secondary btn-sm mobile-toggle d-md-none" @click="sidebarOpen = !sidebarOpen">
+            <i class="bi bi-list"></i>
+          </button>
+          <div class="live-clock fade-in">
+            <i class="bi bi-clock"></i>
+            <span>{{ currentTime }}</span>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+          <div class="live-clock fade-in">
+            <i class="bi bi-calendar3"></i>
+            <span>{{ todayDate }}</span>
+          </div>
+          <div class="d-flex align-items-center gap-2" role="button" @click="openProfileModal">
+            <small class="text-muted">Hi, {{ user.username }}</small>
+            <div class="user-avatar">{{ (user.username || 'U')[0].toUpperCase() }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard View -->
+      <div v-if="view === 'dashboard'" class="fade-in">
+        <div class="app-header">
+          <h4><i class="bi bi-grid-1x2-fill me-2" style="color: #6366f1;"></i>Dashboard</h4>
+        </div>
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-md-3">
+            <div class="card stat-card"><div class="stat-value">{{ stats.total_todos }}</div><div class="stat-label">Total</div></div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card stat-card"><div class="stat-value" style="color: #22c55e;">{{ stats.completed_todos }}</div><div class="stat-label">Done</div></div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card stat-card"><div class="stat-value" style="color: #f59e0b;">{{ stats.pending_todos }}</div><div class="stat-label">Pending</div></div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card stat-card"><div class="stat-value" style="color: #ef4444;">{{ stats.overdue_todos }}</div><div class="stat-label">Overdue</div></div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card stat-card"><div class="stat-value" style="color: #3b82f6;">{{ stats.today_due }}</div><div class="stat-label">Due Today</div></div>
+          </div>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="card"><div class="card-header"><i class="bi bi-calendar-event me-2"></i>Upcoming (7 days)</div>
+              <div class="p-3">
+                <div v-if="dashboardUpcoming.length === 0" class="empty-state"><p>No upcoming tasks</p></div>
+                <div v-for="todo in dashboardUpcoming" :key="todo.id" class="d-flex align-items-center mb-2">
+                  <span class="priority-badge" :class="'priority-' + todo.priority">{{ todo.priority }}</span>
+                  <span class="ms-2 flex-grow-1">{{ todo.title }}</span>
+                  <small class="text-muted" v-if="todo.due_date">{{ formatDate(todo.due_date) }}</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card"><div class="card-header"><i class="bi bi-check-circle me-2"></i>Recent Completed</div>
+              <div class="p-3">
+                <div v-if="recentCompleted.length === 0" class="empty-state"><p>No recent completions</p></div>
+                <div v-for="todo in recentCompleted" :key="todo.id" class="d-flex align-items-center mb-2">
+                  <i class="bi bi-check-circle-fill me-2" style="color: #22c55e;"></i>
+                  <span class="flex-grow-1"><s>{{ todo.title }}</s></span>
+                  <small class="text-muted" v-if="todo.completed_at">{{ formatDate(todo.completed_at) }}</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Calendar Widget -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <div class="calendar-widget card fade-in-up" style="border: 1px solid #2a2a4a;">
+              <div class="cal-header">
+                <button class="cal-nav-btn" @click="prevMonth"><i class="bi bi-chevron-left"></i></button>
+                <span>{{ calMonthYear }}</span>
+                <button class="cal-nav-btn" @click="nextMonth"><i class="bi bi-chevron-right"></i></button>
+              </div>
+              <div class="cal-grid">
+                <div class="day-name" v-for="d in dayNames" :key="d">{{ d }}</div>
+                <div v-for="(day, idx) in calDays" :key="idx" class="day"
+                  :class="{ today: day.isToday, 'other-month': day.otherMonth, 'has-tasks': day.hasTasks, 'has-upcoming': day.hasUpcoming }"
+                  @click="goToDate(day)">
+                  {{ day.day }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Todos View -->
+      <div v-else-if="view === 'todos'" class="fade-in">
+        <div class="app-header">
+          <h4><i class="bi bi-list-task me-2" style="color: #6366f1;"></i>{{ currentListName }}</h4>
+          <button class="btn btn-primary btn-sm" @click="openAddTodo"><i class="bi bi-plus-lg me-1"></i>Add Task</button>
+        </div>
+        <div class="tab-bar">
+          <button class="tab-btn" :class="{ active: filterStatus === 'all' }" @click="filterStatus='all'">All</button>
+          <button class="tab-btn" :class="{ active: filterStatus === 'active' }" @click="filterStatus='active'">Active</button>
+          <button class="tab-btn" :class="{ active: filterStatus === 'today' }" @click="filterStatus='today'">Today</button>
+          <button class="tab-btn" :class="{ active: filterStatus === 'upcoming' }" @click="filterStatus='upcoming'">Upcoming</button>
+          <button class="tab-btn" :class="{ active: filterStatus === 'overdue' }" @click="filterStatus='overdue'">Overdue</button>
+          <button class="tab-btn" :class="{ active: filterStatus === 'completed' }" @click="filterStatus='completed'">Done</button>
+        </div>
+        <div class="card">
+          <div class="p-0">
+            <div v-if="filteredTodos.length === 0" class="empty-state">
+              <i class="bi bi-inbox"></i>
+              <p>No tasks found</p>
+            </div>
+            <div v-for="todo in filteredTodos" :key="todo.id" class="todo-item" :class="{ completed: todo.completed }">
+              <div class="d-flex align-items-center">
+                <div class="todo-check" :class="{ checked: todo.completed }" @click="toggleComplete(todo)">
+                  <i v-if="todo.completed" class="bi bi-check"></i>
+                </div>
+                <div class="flex-grow-1" @click="editTodo(todo)">
+                  <div class="todo-title fw-medium">{{ todo.title }}</div>
+                  <div class="d-flex align-items-center gap-2 mt-1">
+                    <span class="priority-badge" :class="'priority-' + todo.priority">{{ todo.priority }}</span>
+                    <small class="text-muted" v-if="todo.due_date"><i class="bi bi-calendar3 me-1"></i>{{ formatDate(todo.due_date) }}</small>
+                    <small class="text-muted" v-if="todo.subtask_count > 0"><i class="bi bi-diagram-2 me-1"></i>{{ todo.subtask_count }}</small>
+                  </div>
+                </div>
+                <button v-if="!todo.completed" class="btn btn-sm btn-success me-1" @click.stop="toggleComplete(todo)" title="Mark Complete"><i class="bi bi-check-lg me-1"></i>Complete</button>
+                <button class="btn btn-sm btn-outline-danger border-0" @click="deleteTodo(todo)"><i class="bi bi-trash"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chatbot -->
+  <div v-if="isLoggedIn">
+    <button class="chatbot-toggle" @click="chatOpen = !chatOpen" :title="chatOpen ? 'Close chat' : 'Open chat'">
+      <i :class="chatOpen ? 'bi bi-x-lg' : 'bi bi-chat-dots-fill'"></i>
+      <span v-if="!chatOpen && chatHasUnread" class="badge-dot"></span>
+    </button>
+    <div v-if="chatOpen" class="chatbot-panel">
+      <div class="chat-header">
+        <h6><i class="bi bi-robot me-2" style="color: #6366f1;"></i>Assistant</h6>
+        <button class="close-btn" @click="chatOpen = false"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="chat-messages" ref="chatMessages">
+        <div v-if="chatMessages.length === 0" class="text-center text-muted py-4" style="font-size: 0.85rem;">
+          <i class="bi bi-chat-dots" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>
+          Start a conversation with your assistant
+        </div>
+        <template v-for="(msg, idx) in chatMessages" :key="idx">
+          <div class="msg" :class="msg.role">{{ msg.content }}</div>
+          <div v-if="msg.sources && msg.sources.length" class="msg bot sources">{{ msg.sources.map(s => s.title).join(', ') }}</div>
+        </template>
+        <div v-if="chatLoading" class="typing-indicator">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+      <div v-if="chatError" class="text-danger small px-3 pt-1">{{ chatError }}</div>
+      <div class="chat-input-area">
+        <input type="text" ref="chatInput" v-model="chatInput" placeholder="Ask something..." @keyup.enter="sendChat" :disabled="chatLoading">
+        <button @click="sendChat" :disabled="!chatInput.trim() || chatLoading">
+          <i class="bi bi-send-fill"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Modal -->
+  <div class="modal fade profile-modal" id="profileModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-person-circle me-2" style="color: var(--theme-color, #6366f1);"></i>My Profile</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="profile-header-card">
+          <div class="big-avatar">{{ (user.username || 'U')[0].toUpperCase() }}</div>
+          <h5>{{ user.full_name || user.username }}</h5>
+          <span class="text-muted">@{{ user.username }}</span>
+        </div>
+        <div class="profile-nav">
+          <div class="nav-item" :class="{ active: profileSection === 'details' }" @click="profileSection='details'"><i class="bi bi-person-lines-fill"></i>My Details</div>
+          <div class="nav-item" :class="{ active: profileSection === 'theme' }" @click="profileSection='theme'"><i class="bi bi-palette-fill"></i>Calendar Theme</div>
+          <div class="nav-item" :class="{ active: profileSection === 'background' }" @click="profileSection='background'"><i class="bi bi-paint-bucket"></i>Background</div>
+          <div class="nav-item" :class="{ active: profileSection === 'password' }" @click="profileSection='password'"><i class="bi bi-key-fill"></i>Password</div>
+          <div class="nav-item" :class="{ active: profileSection === 'logout' }" @click="logoutAndClose"><i class="bi bi-box-arrow-right"></i>Logout</div>
+        </div>
+        <div class="modal-body p-0">
+          <!-- My Details Page -->
+          <div v-if="profileSection === 'details'" class="profile-page">
+            <h6>Account Information</h6>
+            <div class="info-row mb-2"><span class="label"><i class="bi bi-envelope me-2" style="color: var(--theme-color, #6366f1);"></i>Email</span><span class="value">{{ user.email }}</span></div>
+            <div class="info-row mb-2"><span class="label"><i class="bi bi-person-badge me-2" style="color: var(--theme-color, #6366f1);"></i>User ID</span><span class="value">#{{ user.id }}</span></div>
+            <div class="info-row mb-2"><span class="label"><i class="bi bi-calendar-plus me-2" style="color: var(--theme-color, #6366f1);"></i>Joined</span><span class="value">{{ formatDate(user.created_at) }}</span></div>
+            <div class="info-row mb-2"><span class="label"><i class="bi bi-clock-history me-2" style="color: var(--theme-color, #6366f1);"></i>Last Login</span><span class="value">{{ user.last_login ? formatDate(user.last_login) : 'N/A' }}</span></div>
+
+          </div>
+
+          <!-- Calendar Theme Page -->
+          <div v-if="profileSection === 'theme'" class="profile-page">
+            <h6>Choose a Calendar Theme</h6>
+            <div class="theme-swatches" style="justify-content: center; gap: 16px; padding: 20px 0;">
+              <div v-for="(t, i) in themeOptions" :key="i" class="theme-item">
+                <div class="theme-swatch" :style="{ background: t.color, width: '44px', height: '44px' }" :class="{ active: selectedTheme === i }" @click="selectTheme(i)" :title="t.name"></div>
+                <div class="theme-label" style="margin-top: 8px;">{{ t.name }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Background Page -->
+          <div v-if="profileSection === 'background'" class="profile-page">
+            <h6>Choose a Background Color</h6>
+            <div class="color-swatches" style="justify-content: center; gap: 12px; padding: 20px 0;">
+              <div v-for="(c, i) in bgColorOptions" :key="i" class="color-item">
+                <div class="color-swatch" :style="{ background: c.bg, width: '40px', height: '40px', border: c.bg === '#ffffff' || c.bg === '#ffb6c1' || c.bg === '#add8e6' ? '2px solid #a0a0c0' : '2px solid transparent' }" :class="{ active: selectedBg === i }" @click="selectBg(i)" :title="c.name"></div>
+                <div class="color-label" :style="{ color: i === selectedBg ? 'var(--theme-color, #6366f1)' : '' }">{{ c.name }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Password Page -->
+          <div v-if="profileSection === 'password'" class="profile-page">
+            <h6><i class="bi bi-key-fill me-2" style="color: var(--theme-color, #6366f1);"></i>Change Password</h6>
+            <div class="cpw-form">
+              <div class="input-group mb-2">
+                <input :type="cpwShowCurrent ? 'text' : 'password'" class="form-control" v-model="cpwForm.current" placeholder="Current password">
+                <button class="btn btn-outline-secondary" type="button" @click="cpwShowCurrent = !cpwShowCurrent" tabindex="-1"><i :class="cpwShowCurrent ? 'bi bi-eye-slash' : 'bi bi-eye'"></i></button>
+              </div>
+              <div class="input-group mb-2">
+                <input :type="cpwShowNew ? 'text' : 'password'" class="form-control" v-model="cpwForm.newPw" placeholder="New password" @input="checkNewPw">
+                <button class="btn btn-outline-secondary" type="button" @click="cpwShowNew = !cpwShowNew" tabindex="-1"><i :class="cpwShowNew ? 'bi bi-eye-slash' : 'bi bi-eye'"></i></button>
+              </div>
+              <div class="input-group mb-2">
+                <input :type="cpwShowConfirm ? 'text' : 'password'" class="form-control" v-model="cpwForm.confirm" placeholder="Confirm new password">
+                <button class="btn btn-outline-secondary" type="button" @click="cpwShowConfirm = !cpwShowConfirm" tabindex="-1"><i :class="cpwShowConfirm ? 'bi bi-eye-slash' : 'bi bi-eye'"></i></button>
+              </div>
+              <div class="password-strength-bar mb-1" :style="{ width: cpwStrength + '%', background: cpwStrengthColor }"></div>
+              <ul class="password-checklist mb-2">
+                <li :class="{ valid: cpwChecks.minLen }"><i :class="cpwChecks.minLen ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i> 8+ characters</li>
+                <li :class="{ valid: cpwChecks.hasUpper }"><i :class="cpwChecks.hasUpper ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i> Uppercase letter</li>
+                <li :class="{ valid: cpwChecks.hasLower }"><i :class="cpwChecks.hasLower ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i> Lowercase letter</li>
+                <li :class="{ valid: cpwChecks.hasNumber }"><i :class="cpwChecks.hasNumber ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i> Number</li>
+                <li :class="{ valid: cpwChecks.hasSpecial }"><i :class="cpwChecks.hasSpecial ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i> Special character</li>
+              </ul>
+              <button class="btn btn-primary w-100 btn-sm" @click="changePassword" :disabled="cpwLoading || !cpwForm.current || !cpwForm.newPw || !cpwForm.confirm">
+                <span v-if="cpwLoading" class="spinner-border spinner-border-sm me-2"></span>
+                Update Password
+              </button>
+              <div v-if="cpwError" class="text-danger small mt-2">{{ cpwError }}</div>
+              <div v-if="cpwSuccess" class="text-success small mt-2">{{ cpwSuccess }}</div>
+            </div>
+          </div>
+
+          <!-- Logout Page -->
+          <div v-if="profileSection === 'logout'" class="profile-page text-center">
+            <h6>Are you sure you want to logout?</h6>
+            <div style="padding: 20px 0;">
+              <i class="bi bi-box-arrow-right" style="font-size: 3rem; color: #ef4444; display: block; margin-bottom: 16px;"></i>
+              <p class="text-muted small">You will need to sign in again to access your tasks.</p>
+              <div class="d-flex gap-3 justify-content-center mt-3">
+                <button class="btn btn-secondary" @click="profileSection='details'">Cancel</button>
+                <button class="btn btn-danger px-4" @click="logoutAndClose"><i class="bi bi-box-arrow-right me-2"></i>Logout</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Todo Modal -->
+  <div class="modal fade" id="todoModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ editingTodo ? 'Edit Task' : 'New Task' }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Title *</label>
+            <input type="text" class="form-control" v-model="todoForm.title" required maxlength="200">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" v-model="todoForm.description" rows="2"></textarea>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label class="form-label">Priority</label>
+              <select class="form-select" v-model="todoForm.priority">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Due Date</label>
+              <input type="date" class="form-control" v-model="todoForm.due_date">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">List</label>
+            <select class="form-select" v-model="todoForm.list_id">
+              <option :value="null">Default</option>
+              <option v-for="list in lists" :key="list.id" :value="list.id">{{ list.name }}</option>
+              <option value="__new__">+ Create New List</option>
+            </select>
+            <div v-if="todoForm.list_id === '__new__'" class="mt-2 d-flex gap-2">
+              <input type="text" class="form-control form-control-sm" v-model="newListName" placeholder="Enter list name..." @keyup.enter="createNewList">
+              <button class="btn btn-primary btn-sm" @click="createNewList" :disabled="!newListName.trim()">Create</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <div v-if="todoError" class="text-danger small me-auto">{{ todoError }}</div>
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary" @click="saveTodo" :disabled="!todoForm.title">
+            {{ editingTodo ? 'Update' : 'Create' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script>
+const { createApp } = Vue;
+const API = window.location.origin;
+
+const app = createApp({
+  data() {
+    return {
+      isLoggedIn: !!localStorage.getItem('token'),
+      authMode: 'login',
+      authForm: { email: '', password: '', username: '' },
+      loading: false,
+      view: 'dashboard',
+      sidebarOpen: false,
+      user: {},
+      token: localStorage.getItem('token') || '',
+      lists: [],
+      todos: [],
+      stats: {},
+      upcoming: [],
+      recentCompleted: [],
+      filterStatus: 'active',
+      selectedListId: null,
+      todoForm: { title: '', description: '', priority: 'medium', due_date: '', list_id: null },
+      editingTodo: null,
+      toast: null,
+      showLoginPassword: false,
+      showRegisterPassword: false,
+      currentTime: '',
+      todayDate: '',
+      calMonth: new Date().getMonth(),
+      calYear: new Date().getFullYear(),
+      dayNames: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+      pChecks: { minLen: false, hasUpper: false, hasLower: false, hasNumber: false, hasSpecial: false },
+      strengthPercent: 0,
+      strengthColor: '#ef4444',
+      todoError: '',
+      newListName: '',
+      chatOpen: false,
+      chatInput: '',
+      chatMessages: [],
+      chatError: '',
+      chatSessionId: null,
+      chatLoading: false,
+      chatHasUnread: false,
+      profileModal: null,
+      profileSection: 'details',
+      themeOptions: [
+        { name: 'Purple', color: '#6366f1' },
+        { name: 'Blue', color: '#3b82f6' },
+        { name: 'Green', color: '#22c55e' },
+        { name: 'Orange', color: '#f97316' },
+        { name: 'Pink', color: '#ec4899' }
+      ],
+      bgColorOptions: [
+        { bg: '#0f0f1a', name: 'Dark Purple' },
+        { bg: '#1a1a2e', name: 'Navy' },
+        { bg: '#ffb6c1', name: 'Pink' },
+        { bg: '#add8e6', name: 'Light Blue' },
+        { bg: '#ffffff', name: 'White' },
+        { bg: '#000000', name: 'Black' },
+        { bg: '#2d1b2e', name: 'Dark Pink' },
+        { bg: '#1a2e1a', name: 'Dark Green' },
+        { bg: '#ff69b4', name: 'Hot Pink' },
+        { bg: '#87ceeb', name: 'Sky Blue' }
+      ],
+      selectedTheme: parseInt(localStorage.getItem('calTheme') || '0'),
+      selectedBg: parseInt(localStorage.getItem('bgColor') || '0'),
+      cpwForm: { current: '', newPw: '', confirm: '' },
+      cpwShowCurrent: false,
+      cpwShowNew: false,
+      cpwShowConfirm: false,
+      cpwChecks: { minLen: false, hasUpper: false, hasLower: false, hasNumber: false, hasSpecial: false },
+      cpwStrength: 0,
+      cpwStrengthColor: '#ef4444',
+      cpwLoading: false,
+      cpwError: '',
+      cpwSuccess: ''
+    };
+  },
+  computed: {
+    currentListName() {
+      if (this.selectedListId) {
+        const list = this.lists.find(l => l.id === this.selectedListId);
+        return list ? list.name : 'Tasks';
+      }
+      return 'All Tasks';
+    },
+    calDays() {
+      const year = this.calYear;
+      const month = this.calMonth;
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const daysInPrev = new Date(year, month, 0).getDate();
+      const today = new Date();
+      const todayStr = today.toLocaleDateString('en-CA');
+      const upcomingDates = new Set();
+      (this.todos || []).filter(t => t.due_date && !t.completed).forEach(t => {
+        upcomingDates.add(new Date(t.due_date).toLocaleDateString('en-CA'));
+      });
+      const days = [];
+      for (let i = firstDay - 1; i >= 0; i--) {
+        days.push({ day: daysInPrev - i, otherMonth: true, isToday: false, hasTasks: false, hasUpcoming: false, date: null });
+      }
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = new Date(year, month, d).toLocaleDateString('en-CA');
+        const isToday = dateStr === todayStr;
+        days.push({ day: d, otherMonth: false, isToday, hasTasks: false, hasUpcoming: upcomingDates.has(dateStr), date: dateStr });
+      }
+      const remaining = 7 - (days.length % 7);
+      if (remaining < 7) {
+        for (let d = 1; d <= remaining; d++) {
+          days.push({ day: d, otherMonth: true, isToday: false, hasTasks: false, hasUpcoming: false, date: null });
+        }
+      }
+      return days;
+    },
+    calMonthYear() {
+      const date = new Date(this.calYear, this.calMonth, 1);
+      return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    },
+    dashboardUpcoming() {
+      const now = new Date(); now.setHours(0,0,0,0);
+      const week = new Date(now); week.setDate(week.getDate() + 7);
+      return this.todos.filter(t => !t.completed && t.due_date && new Date(t.due_date) >= now && new Date(t.due_date) <= week)
+        .sort((a,b) => new Date(a.due_date) - new Date(b.due_date));
+    },
+    filteredTodos() {
+      return this.todos.filter(t => {
+        if (this.filterStatus === 'active') return !t.completed && t.status !== 'archived';
+        if (this.filterStatus === 'completed') return t.completed;
+        const now = new Date();
+        const due = t.due_date ? new Date(t.due_date) : null;
+        if (this.filterStatus === 'overdue') return !t.completed && due && due < now;
+        if (this.filterStatus === 'today') {
+          const today = new Date(); today.setHours(0,0,0,0);
+          const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+          return !t.completed && due && due >= today && due < tomorrow;
+        }
+        if (this.filterStatus === 'upcoming') {
+          const today = new Date(); today.setHours(0,0,0,0);
+          const week = new Date(today); week.setDate(week.getDate() + 7);
+          return !t.completed && due && due >= today && due <= week;
+        }
+        return true;
+      });
+    }
+  },
+  watch: {
+    chatOpen(val) {
+      if (val && this.isLoggedIn) {
+        this.chatMessages = [];
+        this.chatSessionId = null;
+        this.chatError = '';
+        this.initChat();
+        this.$nextTick(() => {
+          if (this.$refs.chatInput) this.$refs.chatInput.focus();
+        });
+      }
+    }
+  },
+  methods: {
+    async api(path, options = {}) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+      const res = await fetch(API + path, { ...options, headers });
+      if (res.status === 401) { this.logout(); throw new Error('Unauthorized'); }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || data.message || data.msg || 'Request failed');
+      return data;
+    },
+    async login() {
+      this.loading = true;
+      try {
+        const data = await this.api('/api/auth/login', {
+          method: 'POST', body: JSON.stringify({ email: this.authForm.email, password: this.authForm.password })
+        });
+        this.token = data.access_token;
+        localStorage.setItem('token', this.token);
+        this.user = data.user;
+        this.isLoggedIn = true;
+        this.loadData();
+      } catch (e) {
+        this.showToast('Error', e.message, 'danger');
+      } finally { this.loading = false; }
+    },
+    async register() {
+      this.loading = true;
+      try {
+        const data = await this.api('/api/auth/register', {
+          method: 'POST', body: JSON.stringify(this.authForm)
+        });
+        this.token = data.access_token;
+        localStorage.setItem('token', this.token);
+        this.user = data.user;
+        this.isLoggedIn = true;
+        this.loadData();
+      } catch (e) {
+        this.showToast('Error', e.message, 'danger');
+      } finally { this.loading = false; }
+    },
+    logout() {
+      localStorage.removeItem('token');
+      this.isLoggedIn = false;
+      this.token = '';
+      this.user = {};
+      this.todos = [];
+      this.lists = [];
+      this.chatOpen = false;
+      this.chatMessages = [];
+      this.chatSessionId = null;
+    },
+    async loadData() {
+      try {
+        const [userData, todosData, listsData, dashData, upcData, recData] = await Promise.all([
+          this.api('/api/auth/profile'),
+          this.api('/api/todos/?per_page=500&status=all'),
+          this.api('/api/lists/'),
+          this.api('/api/dashboard/summary'),
+          this.api('/api/dashboard/upcoming-todos'),
+          this.api('/api/dashboard/recent-completed')
+        ]);
+        this.user = userData.user;
+        this.stats = dashData;
+        this.upcoming = upcData.upcoming_todos || [];
+        this.recentCompleted = recData.recent_completed || [];
+        this.todos = todosData.todos || [];
+        this.lists = listsData.lists || [];
+        this.api('/api/todos/cleanup', { method: 'POST' }).catch(() => {});
+      } catch (e) {
+        console.error('Load data error:', e);
+      }
+    },
+    async toggleComplete(todo) {
+      try {
+        const endpoint = todo.completed ? `/api/todos/${todo.id}/reopen` : `/api/todos/${todo.id}/complete`;
+        await this.api(endpoint, { method: 'PATCH' });
+        todo.completed = !todo.completed;
+        this.loadData();
+        if (todo.completed) this.filterStatus = 'active';
+      } catch (e) { this.showToast('Error', e.message, 'danger'); }
+    },
+    openAddTodo() {
+      this.editingTodo = null;
+      this.todoError = '';
+      this.newListName = '';
+      this.todoForm = { title: '', description: '', priority: 'medium', due_date: '', list_id: this.selectedListId };
+      new bootstrap.Modal(document.getElementById('todoModal')).show();
+    },
+    editTodo(todo) {
+      if (todo.completed) return;
+      this.editingTodo = todo;
+      this.todoError = '';
+      this.todoForm = {
+        title: todo.title,
+        description: todo.description || '',
+        priority: todo.priority,
+        due_date: todo.due_date ? todo.due_date.slice(0, 10) : '',
+        list_id: todo.list_id
+      };
+      new bootstrap.Modal(document.getElementById('todoModal')).show();
+    },
+    async saveTodo() {
+      this.todoError = '';
+      if (this.todoForm.list_id === '__new__') { this.todoError = 'Create the new list first or select an existing one'; return; }
+      try {
+        const body = { ...this.todoForm };
+        body.title = String(body.title || '').trim();
+        if (body.due_date) {
+          const due = new Date(body.due_date + 'T00:00:00');
+          const today = new Date(); today.setHours(0,0,0,0);
+          if (due < today) { this.todoError = 'Cannot assign a task to a past date'; return; }
+          try { body.due_date = new Date(body.due_date).toISOString(); }
+          catch { body.due_date = null; }
+        } else body.due_date = null;
+        if (this.editingTodo) {
+          await this.api(`/api/todos/${this.editingTodo.id}`, { method: 'PUT', body: JSON.stringify(body) });
+        } else {
+          await this.api('/api/todos/', { method: 'POST', body: JSON.stringify(body) });
+        }
+        bootstrap.Modal.getInstance(document.getElementById('todoModal')).hide();
+        this.loadData();
+        this.showToast('Success', this.editingTodo ? 'Task updated' : 'Task created', 'success');
+      } catch (e) { this.todoError = e.message; }
+    },
+    async createNewList() {
+      const name = String(this.newListName || '').trim();
+      if (!name) return;
+      try {
+        const data = await this.api('/api/lists/', { method: 'POST', body: JSON.stringify({ name }) });
+        this.lists.push(data.list);
+        this.todoForm.list_id = data.list.id;
+        this.newListName = '';
+      } catch (e) { this.todoError = e.message; }
+    },
+    async deleteTodo(todo) {
+      if (!confirm('Delete this task?')) return;
+      try {
+        await this.api(`/api/todos/${todo.id}`, { method: 'DELETE' });
+        this.todos = this.todos.filter(t => t.id !== todo.id);
+        this.showToast('Deleted', 'Task deleted', 'warning');
+      } catch (e) { this.showToast('Error', e.message, 'danger'); }
+    },
+    selectList(list) {
+      this.selectedListId = list.id;
+      this.view = 'todos';
+      this.filterTodosByList(list.id);
+    },
+    async filterTodosByList(listId) {
+      try {
+        const data = await this.api(`/api/todos/?per_page=100&list_id=${listId}`);
+        this.todos = data.todos || [];
+      } catch (e) { console.error(e); }
+    },
+    switchAuth(mode) {
+      this.authMode = mode;
+      this.authForm.email = '';
+      this.authForm.password = '';
+    },
+    openProfileModal() {
+      if (!this.profileModal) {
+        this.profileModal = new bootstrap.Modal(document.getElementById('profileModal'));
+      }
+      this.profileSection = 'details';
+      this.cpwForm = { current: '', newPw: '', confirm: '' };
+      this.cpwError = '';
+      this.cpwSuccess = '';
+      this.cpwChecks = { minLen: false, hasUpper: false, hasLower: false, hasNumber: false, hasSpecial: false };
+      this.cpwStrength = 0;
+      this.cpwStrengthColor = '#ef4444';
+      this.profileModal.show();
+    },
+    selectTheme(idx) {
+      this.selectedTheme = idx;
+      localStorage.setItem('calTheme', idx);
+      const c = this.themeOptions[idx].color;
+      document.documentElement.style.setProperty('--theme-color', c);
+      document.querySelectorAll('.btn-primary').forEach(el => {
+        el.style.background = c;
+        el.style.borderColor = c;
+      });
+    },
+    selectBg(idx) {
+      this.selectedBg = idx;
+      localStorage.setItem('bgColor', idx);
+      const color = this.bgColorOptions[idx].bg;
+      document.body.style.background = color;
+      document.body.style.color = '#000';
+      document.body.style.fontWeight = '700';
+    },
+    checkNewPw() {
+      const pw = this.cpwForm.newPw;
+      this.cpwChecks.minLen = pw.length >= 8;
+      this.cpwChecks.hasUpper = /[A-Z]/.test(pw);
+      this.cpwChecks.hasLower = /[a-z]/.test(pw);
+      this.cpwChecks.hasNumber = /[0-9]/.test(pw);
+      this.cpwChecks.hasSpecial = /[^A-Za-z0-9]/.test(pw);
+      const passed = Object.values(this.cpwChecks).filter(Boolean).length;
+      this.cpwStrength = (passed / 5) * 100;
+      if (this.cpwStrength <= 20) this.cpwStrengthColor = '#ef4444';
+      else if (this.cpwStrength <= 40) this.cpwStrengthColor = '#f59e0b';
+      else if (this.cpwStrength <= 60) this.cpwStrengthColor = '#eab308';
+      else if (this.cpwStrength <= 80) this.cpwStrengthColor = '#22c55e';
+      else this.cpwStrengthColor = '#6366f1';
+    },
+    async changePassword() {
+      if (this.cpwForm.newPw !== this.cpwForm.confirm) {
+        this.cpwError = 'Passwords do not match';
+        this.cpwSuccess = '';
+        return;
+      }
+      this.cpwLoading = true;
+      this.cpwError = '';
+      this.cpwSuccess = '';
+      try {
+        await this.api('/api/auth/change-password', {
+          method: 'POST',
+          body: JSON.stringify({ current_password: this.cpwForm.current, new_password: this.cpwForm.newPw })
+        });
+        this.cpwSuccess = 'Password changed successfully';
+        this.cpwForm = { current: '', newPw: '', confirm: '' };
+        this.cpwChecks = { minLen: false, hasUpper: false, hasLower: false, hasNumber: false, hasSpecial: false };
+        this.cpwStrength = 0;
+        this.cpwStrengthColor = '#ef4444';
+      } catch (e) {
+        this.cpwError = e.message;
+      } finally {
+        this.cpwLoading = false;
+      }
+    },
+    logoutAndClose() {
+      if (this.profileModal) this.profileModal.hide();
+      setTimeout(() => this.logout(), 300);
+    },
+    checkPassword() {
+      const pw = this.authForm.password;
+      this.pChecks.minLen = pw.length >= 8;
+      this.pChecks.hasUpper = /[A-Z]/.test(pw);
+      this.pChecks.hasLower = /[a-z]/.test(pw);
+      this.pChecks.hasNumber = /[0-9]/.test(pw);
+      this.pChecks.hasSpecial = /[^A-Za-z0-9]/.test(pw);
+      const passed = Object.values(this.pChecks).filter(Boolean).length;
+      this.strengthPercent = (passed / 5) * 100;
+      if (this.strengthPercent <= 20) this.strengthColor = '#ef4444';
+      else if (this.strengthPercent <= 40) this.strengthColor = '#f59e0b';
+      else if (this.strengthPercent <= 60) this.strengthColor = '#eab308';
+      else if (this.strengthPercent <= 80) this.strengthColor = '#22c55e';
+      else this.strengthColor = '#6366f1';
+    },
+    prevMonth() {
+      if (this.calMonth === 0) { this.calMonth = 11; this.calYear--; }
+      else this.calMonth--;
+    },
+    nextMonth() {
+      if (this.calMonth === 11) { this.calMonth = 0; this.calYear++; }
+      else this.calMonth++;
+    },
+    goToDate(day) {
+      if (day.otherMonth || !day.date) return;
+      this.view = 'todos';
+      this.filterStatus = 'active';
+      this.todoForm.due_date = day.date;
+    },
+    updateTime() {
+      const now = new Date();
+      this.currentTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      this.todayDate = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    },
+    async initChat() {
+      try {
+        const sess = await this.api('/api/chatbot/sessions', { method: 'POST', body: '{}' });
+        this.chatSessionId = sess.session.id;
+        this.chatMessages = [{ role: 'bot', content: sess.welcome_message.content }];
+      } catch (e) {
+        this.chatMessages = [{ role: 'bot', content: "Hello! I'm your Todo App assistant. Ask me anything about managing your tasks!" }];
+      }
+    },
+    async sendChat() {
+      const msg = String(this.chatInput || '').trim();
+      if (!msg || this.chatLoading) return;
+      this.chatInput = '';
+      this.chatError = '';
+      this.chatMessages.push({ role: 'user', content: msg });
+      this.chatLoading = true;
+      this.$nextTick(() => this.scrollChat());
+      try {
+        if (!this.chatSessionId) {
+          const sess = await this.api('/api/chatbot/sessions', { method: 'POST', body: '{}' });
+          this.chatSessionId = sess.session.id;
+          this.chatMessages.unshift({ role: 'bot', content: sess.welcome_message.content });
+        }
+        const res = await this.api(`/api/chatbot/sessions/${this.chatSessionId}/messages`, {
+          method: 'POST', body: JSON.stringify({ content: msg })
+        });
+        this.chatMessages.push({ role: 'bot', content: res.bot_message.content, sources: res.sources });
+      } catch (e) {
+        this.chatError = e.message;
+      } finally {
+        this.chatLoading = false;
+        this.$nextTick(() => {
+          this.scrollChat();
+          if (this.$refs.chatInput) this.$refs.chatInput.focus();
+        });
+      }
+    },
+    scrollChat() {
+      const el = this.$refs.chatMessages;
+      if (el) el.scrollTop = el.scrollHeight;
+    },
+    formatDate(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    },
+    showToast(title, message, type = 'info') {
+      const container = document.querySelector('.toast-container') || (() => {
+        const el = document.createElement('div');
+        el.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        document.body.appendChild(el);
+        return el;
+      })();
+      const id = 't' + Date.now();
+      const html = `<div id="${id}" class="toast align-items-center text-bg-${type} border-0" role="alert"><div class="d-flex"><div class="toast-body"><strong>${title}</strong>: ${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>`;
+      container.insertAdjacentHTML('beforeend', html);
+      const el = document.getElementById(id);
+      bootstrap.Toast.getOrCreateInstance(el).show();
+      el.addEventListener('hidden.bs.toast', () => el.remove());
+    }
+  },
+  mounted() {
+    this.authForm.email = '';
+    this.authForm.password = '';
+    this.updateTime();
+    setInterval(() => this.updateTime(), 1000);
+    const savedTheme = parseInt(localStorage.getItem('calTheme') || '0');
+    this.selectedTheme = savedTheme;
+    this.selectTheme(savedTheme);
+    const savedBg = parseInt(localStorage.getItem('bgColor') || '0');
+    this.selectedBg = savedBg;
+    document.body.style.background = this.bgColorOptions[savedBg].bg;
+    document.body.style.color = '#000';
+    document.body.style.fontWeight = '700';
+    if (this.isLoggedIn) this.loadData();
+  }
+});
+app.mount('#app');
+</script>
+</body>
+</html>
