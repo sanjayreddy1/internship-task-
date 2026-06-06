@@ -209,6 +209,4 @@ Key environment variables (`.env`):
 - Minimum 8 characters
 - At least 1 uppercase, 1 lowercase, 1 digit, 1 special character
 
-## License
 
-MIT
